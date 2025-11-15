@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Synapse — field medical assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-dark1:#0b0206; --blood:#ff274d; --deep-purple:#6f40ff; --muted:#9aa6b2; --white-soft:#f6f8fb;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color:var(--white-soft);
+}
+html,body{height:100%;margin:0;background:
+  radial-gradient(800px 600px at 10% 15%, rgba(34,2,6,0.56), transparent 6%),
+  radial-gradient(900px 700px at 95% 90%, rgba(20,4,40,0.5), transparent 8%),
+  linear-gradient(180deg,#240007 0%, #0b0210 60%);}
+.container{max-width:1080px;margin:28px auto;padding:22px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:16px;padding:14px;box-shadow:0 12px 40px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.02)}
+.header{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.brand{font-weight:800;font-size:20px;color:#f6f8fb}
+.subtitle{color:var(--muted);font-size:13px;margin-top:4px}
+
+/* NEW logo styling */
+.logo-mark{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blood),var(--deep-purple));box-shadow:0 8px 30px rgba(111,64,255,0.12)}
+
+/* mascot */
+.mascot{position:absolute;right:18px;top:-18px;width:96px;height:96px;cursor:pointer;filter:drop-shadow(0 12px 30px rgba(111,64,255,0.12));transition:transform .12s ease}
+.mascot:active{transform:scale(.96)}
+.tipbox{position:fixed;right:26px;top:120px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);display:none;color:var(--white-soft);width:260px;box-shadow:0 12px 30px rgba(0,0,0,0.5)}
+
+/* chat */
+.chat-area{display:flex;flex-direction:column;height:74vh;padding:12px;border-radius:12px;overflow:hidden}
+#chat{flex:1;overflow:auto;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));}
+.msg{display:flex;margin:12px 6px;gap:10px;align-items:flex-end}
+.msg.bot{justify-content:flex-start}
+.msg.user{justify-content:flex-end}
+.bubble{max-width:78%;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.38;backdrop-filter: blur(6px)}
+.bubble.bot{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); color:var(--white-soft);border:1px solid rgba(255,255,255,0.03)}
+.bubble.user{background:linear-gradient(90deg,var(--blood),var(--deep-purple)); color:white;border-radius:18px 18px 6px 18px;box-shadow:0 10px 30px rgba(111,64,255,0.12)}
+.time{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* typing */
+.typing{display:inline-flex;gap:6px;align-items:center}
+.typing .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.85);opacity:.9;animation:jump 1s infinite}
+.typing .dot:nth-child(2){animation-delay:.12s;background:var(--deep-purple)}
+.typing .dot:nth-child(3){animation-delay:.24s;background:var(--blood)}
+@keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+
+/* input */
+.input-row{display:flex;gap:12px;align-items:center;margin-top:12px}
+.input{flex:1;display:flex;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+.input input{flex:1;border:none;outline:none;background:transparent;color:var(--white-soft);font-size:15px;padding:6px}
+.btn{background:linear-gradient(90deg,var(--deep-purple),var(--blood));border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:700;cursor:pointer;box-shadow:0 10px 30px rgba(111,64,255,0.12)}
+.icon-btn{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:10px;color:var(--muted);cursor:pointer}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02);font-weight:700;color:var(--white-soft)}
+.small{font-size:13px;color:var(--muted)}
+
+/* tip card */
+.card-tip{display:none;}
+
+/* responsive */
+@media (max-width:980px){.container{grid-template-columns:1fr;padding:12px}.mascot{display:none}.chat-area{height:68vh}}
+.fade{animation:fadeIn .22s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" style="position:relative;overflow:visible">
+      <div class="header">
+        <div class="logo-mark" aria-hidden="true">
+          <!-- NEW logo: synapse node + medical cross (clean & strong) -->
+          <svg width="44" height="44" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="lg2" x1="0" x2="1"><stop offset="0" stop-color="#ff274d"/><stop offset="1" stop-color="#6f40ff"/></linearGradient></defs>
+            <rect width="64" height="64" rx="12" fill="url(#lg2)"/>
+            <g transform="translate(8,8)" fill="#fff" opacity="0.98">
+              <!-- cross at center -->
+              <rect x="18" y="6" width="8" height="20" rx="2"></rect>
+              <rect x="6" y="14" width="20" height="8" rx="2"></rect>
+              <!-- small synapse nodes -->
+              <circle cx="4" cy="4" r="2" fill="#fff" opacity="0.9"/>
+              <circle cx="52" cy="52" r="2" fill="#fff" opacity="0.9"/>
+            </g>
+          </svg>
+        </div>
+
+        <div>
+          <div class="brand">Synapse</div>
+          <div class="subtitle">Field-friendly medical assistant — calm, helpful, a gentle anime touch</div>
+        </div>
+      </div>
+
+      <!-- chibi mascot -->
+      <div class="mascot" id="mascot" title="Nurse Syna — tap to start a short guided question">
+        <svg viewBox="0 0 160 160" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="mg" x1="0" x2="1"><stop offset="0" stop-color="#ff274d"/><stop offset="1" stop-color="#6f40ff"/></linearGradient>
+            <filter id="sd" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#6f40ff" flood-opacity="0.12"/></filter>
+          </defs>
+          <g filter="url(#sd)">
+            <circle cx="80" cy="80" r="62" fill="url(#mg)"/>
+            <g transform="translate(24,30)">
+              <ellipse cx="40" cy="34" rx="34" ry="30" fill="#fff"/>
+              <circle cx="26" cy="30" r="4" fill="#262626"/>
+              <circle cx="54" cy="30" r="4" fill="#262626"/>
+              <path d="M24 46 q16 10 32 0" stroke="#ffdbe6" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <rect x="16" y="6" width="48" height="10" rx="6" fill="#fff"/>
+              <rect x="34" y="4" width="12" height="6" rx="3" fill="#ff274d"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <div id="mascotTip" class="tipbox">Tap Nurse Syna — she'll ask a short question and then help you step-by-step.</div>
+
+      <!-- chat area -->
+      <div class="chat-area card" style="margin-top:12px">
+        <div id="chat" role="log" aria-live="polite"></div>
+
+        <div class="input-row">
+          <div class="input" role="group" aria-label="Message input">
+            <input id="message" type="text" placeholder="Describe symptoms/injury. Add age/allergies/meds if possible." aria-label="Message">
+            <button id="mic" class="icon-btn" title="Voice input">🎙</button>
+            <button id="send" class="btn" title="Send">Send</button>
+          </div>
+          <button id="clear" class="icon-btn" title="Clear chat">Clear</button>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <label class="pill"><input id="remote" type="checkbox" style="transform:scale(1.05)"/> Remote / Field Mode</label>
+          <div class="small">Synapse gives practical steps — not a replacement for clinicians.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right column -->
+    <div class="card" style="padding:12px" class="card-ghost">
+      <div style="font-weight:800;margin-bottom:8px">Quick samples</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="icon-btn" onclick="setSample('I cut my leg and it is bleeding heavily; I am alone on a hike; age 26')">Trail — heavy bleed</button>
+        <button class="icon-btn" onclick="setSample('My friend fell and likely broke their wrist; 12 km from road; what should I do to stabilize?')">Fracture — stabilize</button>
+        <button class="icon-btn" onclick="setSample('Fever 39°C and breathing fast; village clinic 40 km away')">Remote — fever & breathing</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0"/>
+
+      <div style="font-weight:800;margin-bottom:6px">Safety</div>
+      <div class="small">
+        • Emergencies trigger immediate lifesaving steps and call-to-action.<br>
+        • Remote mode focuses on safe improvisation and evacuation planning.<br>
+        • Synapse does not provide prescriptions or invasive surgical directions.
+      </div>
+
+      <div id="tipCard" style="margin-top:12px;display:none;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)">
+        <div style="font-weight:800">Nurse Syna tip</div>
+        <div class="small" id="tipText" style="margin-top:8px">Keep sterile pads and pressure dressing in your kit.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* Frontend logic adjustments per your requests:
+   - New logo implemented
+   - TTS: prefer female voice where available
+   - Mascot click: ask user clarifying question, do NOT give unsolicited advice
+*/
+
+// DOM refs
+const chat = document.getElementById('chat');
+const msg = document.getElementById('message');
+const send = document.getElementById('send');
+const clearBtn = document.getElementById('clear');
+const mic = document.getElementById('mic');
+const remote = document.getElementById('remote');
+const mascot = document.getElementById('mascot');
+const mascotTip = document.getElementById('mascotTip');
+const tipCard = document.getElementById('tipCard');
+const tipText = document.getElementById('tipText');
+
+let rec=null, listening=false;
+let waitingForMascotAnswer = false; // NEW: when true, next user message is the answer to mascot's question
+let preferredVoice = null;
+
+// Initialize speech recognition if available
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  rec.onstart = ()=>{ listening=true; mic.textContent='⏹'; mic.style.opacity=0.95; }
+  rec.onend = ()=>{ listening=false; mic.textContent='🎙'; mic.style.opacity=1; }
+  rec.onerror = (e)=>{ listening=false; mic.textContent='🎙'; console.warn('speech error', e); }
+  rec.onresult = (ev)=>{ const t = ev.results[0][0].transcript; msg.value = t; sendMessage(); }
+} else { mic.style.display='none'; }
+
+// TTS female preference
+function chooseFemaleVoice(){
+  // Attempt to choose a female-sounding voice
+  const voices = speechSynthesis.getVoices() || [];
+  if (!voices.length) return null;
+  // prefer voices whose name suggests a female voice
+  const femaleRegex = /(female|woman|zira|samantha|amelia|alloy|google uk female|google us female|female voice|serena|linda|joanna|victoria|anna)/i;
+  let candidate = voices.find(v => femaleRegex.test(v.name));
+  if (!candidate){
+    // prefer 'en' voices with higher pitch possibility (heuristic)
+    candidate = voices.find(v => /^en(-|_)?/.test(v.lang) && /Google|Microsoft|Alex|Samantha|Alloy/i.test(v.name));
+  }
+  if (!candidate){
+    // fallback: pick first english voice
+    candidate = voices.find(v => /^en(-|_)?/.test(v.lang)) || voices[0];
+  }
+  return candidate;
+}
+
+// because voices can load asynchronously
+function initVoices(){
+  if (!('speechSynthesis' in window)) return;
+  preferredVoice = chooseFemaleVoice();
+  if (!preferredVoice){
+    // try again after a short delay if not loaded yet
+    setTimeout(()=>{ preferredVoice = chooseFemaleVoice(); }, 250);
+  }
+}
+if ('speechSynthesis' in window){
+  initVoices();
+  window.speechSynthesis.onvoiceschanged = initVoices;
+}
+
+// speak helper uses preferredVoice if found
+function speak(text){
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 1.0;
+  // slight pitch up to sound feminine without being childish
+  u.pitch = 1.12;
+  if (preferredVoice) u.voice = preferredVoice;
+  speechSynthesis.speak(u);
+}
+
+// chat DOM helpers
+function appendUser(text, ts=Date.now()/1000){
+  const w = document.createElement('div'); w.className='msg user fade';
+  const b = document.createElement('div'); b.className='bubble user'; b.innerHTML = escapeHtml(text).replace(/\n/g,'<br/>');
+  w.appendChild(b);
+  const t = document.createElement('div'); t.className='time'; t.textContent = new Date(ts*1000).toLocaleString();
+  w.appendChild(t);
+  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+}
+function appendBot(text, ts=Date.now()/1000, warning=false){
+  const w = document.createElement('div'); w.className='msg bot fade';
+  const b = document.createElement('div'); b.className='bubble bot'; b.innerHTML = text.replace(/\n/g,'<br/>');
+  w.appendChild(b);
+  const t = document.createElement('div'); t.className='time'; t.textContent = new Date(ts*1000).toLocaleString();
+  w.appendChild(t);
+  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+  if (warning){
+    tipCard.style.display='block';
+    tipText.textContent = 'Emergency detected — call local emergency services now.';
+  }
+}
+
+// typing indicator
+let typingEl = null;
+function showTyping(){
+  if (typingEl) return;
+  typingEl = document.createElement('div'); typingEl.className='msg bot';
+  const b = document.createElement('div'); b.className='bubble bot';
+  b.innerHTML = '<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  typingEl.appendChild(b); chat.appendChild(typingEl); chat.scrollTop = chat.scrollHeight;
+}
+function hideTyping(){ if (typingEl){ typingEl.remove(); typingEl = null; } }
+
+// Send message wrapper
+async function sendMessage(){
+  const text = msg.value.trim();
+  if (!text) return;
+
+  // If we are answering the mascot's question, we mark waitingForMascotAnswer false and proceed normally.
+  if (waitingForMascotAnswer){
+    // user is replying to mascot's clarifying question -> proceed to send and reset flag
+    waitingForMascotAnswer = false;
+    // append user and let the normal flow carry on (no extra special flags needed server-side)
+  }
+
+  appendUser(text);
+  msg.value = '';
+  showTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:text, remote_mode: remote.checked})
+    });
+    hideTyping();
+    if (!res.ok){
+      const j = await res.json().catch(()=>({detail:res.statusText}));
+      appendBot(`<b>Error:</b> ${j.detail || 'Server error'}`);
+      return;
+    }
+    const j = await res.json();
+    appendBot(j.reply, j.ts, j.warning);
+    // speak main advice (strip footer) using female voice
+    const speakText = j.reply.split('\n\n— Synapse reminder')[0];
+    speak(speakText);
+  } catch (e){
+    hideTyping();
+    appendBot(`<b>Network error</b>: ${e.message}`);
+    console.error(e);
+  }
+}
+
+// events
+send.addEventListener('click', ()=>{ sendMessage(); });
+msg.addEventListener('keydown', e=>{ if (e.key==='Enter') sendMessage(); });
+clearBtn.addEventListener('click', ()=>{ chat.innerHTML=''; tipCard.style.display='none'; });
+
+// microphone
+mic.addEventListener('click', ()=>{
+  if (!rec) return;
+  if (listening) rec.stop();
+  else rec.start();
+});
+
+// mascot click behavior change: ask a clarifying question (do NOT give unsolicited advice)
+// - if user clicks mascot, Synapse asks: "Hi — what's happening right now? Age/allergies/where are you?"
+// - set waitingForMascotAnswer = true so the next user message is treated as the symptom description
+mascot.addEventListener('click', ()=>{
+  // show short tip bubble briefly
+  mascotTip.style.display='block';
+  setTimeout(()=>{ mascotTip.style.display='none'; }, 2200);
+
+  // ask a clarifying question in chat
+  appendBot("Hi — I'm Nurse Syna. Quick question: what's happening right now? Please include age, any allergies/meds, and if you're far from help.", Date.now()/1000);
+  // focus input and set waiting flag
+  msg.focus();
+  waitingForMascotAnswer = true;
+});
+
+// helper to insert quick samples
+function setSample(s){ msg.value=s; msg.focus(); }
+
+// initial welcome
+appendBot("<strong>Hi — I'm Synapse.</strong><br/>Tell me what's happening. Use Remote mode if you're far from care. Tap Nurse Syna to start a short guided question.", Date.now()/1000);
+
+// helper
+function escapeHtml(unsafe){ return unsafe.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
